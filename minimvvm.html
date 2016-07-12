@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+	<script type="text/javascript" src="jQuery.js"></script>
+</head>
+<body>
+<div id="container">
+	<p>
+		name:<input type="text" bindkey="userName">
+	</p>
+	<p>
+		name:<input type="text" bindkey="userName">
+	</p>
+</div>
+<script type="text/javascript">
+    window.Model={//Model模型
+        userName:"windy",//用户名windy
+        age:34,//年龄34
+        skill:["javascript","html","css","jquery","node"],//掌握的技能
+    }
+
+    bindingBoth(window.Model,$("#container"))
+    //给DOM元素绑定
+    //传进去一个window.model和一个dom元素;
+    function bindingBoth(model,dom){
+        dom.find("[bindkey]").each(function(item){//找到作用域下，自定义的属性名
+            var key=$(this).attr("bindkey");//each方法遍历，获得对应的值；
+            //这个值是dom结构中属性的值；
+            console.log(model[key]);//这里拿到了两个属性值；
+            //因为遍历了两次；
+           	//这里需要做一次测试！！！！
+           	//！！！！
+           	//！！！
+            $(this).val(model[key]);
+            //绑定事件
+            $(this).bind("input",function(){
+               model[key]=$(this).val();
+            })
+        });
+        bindingModel(model,function(name,val){
+            var el=dom.find("[bindkey="+name+"]");
+            if(el.val()!=val){
+                el.val(val);
+            }
+            
+        });
+    }
+    function bindingModel(model,changeCallback){//绑定模型函数
+    	//参数是，模型和改变回调函数;
+        var propertiesMap={};//属性集合
+        model.__private={};//模型私有对象
+        for(elem in model){//循环一个对象拿到的是属性名，即elem是属性名；
+        	//model.hasOwnProperyt(elem);检验对象是否包含某个属性名，返回true或false
+        	//而且要属性！=私有属性；
+        	//而且要属性对应的属性值不是函数，即是一个数据;
+            if(model.hasOwnProperty(elem) && elem!="__private" && typeof(model[elem])!="function"){
+            	//满足以上条件，那么执行闭包函数；
+                (function(propName,propValue){
+                    model.__private[propName]=propValue;// init value
+                    //将属性和属性值，存入model的__private属性中;
+                    //为模型属性集合的属性名，定义get和set方法;
+                    propertiesMap[propName]={
+                        get:function(){ return getFn.call(this,propName)},
+                        //这里是通过call方法改变getFn的上下文，让闭包的属性名能够传递进
+                        //getFn函数;
+                        set:function(v){ return setFn.call(this,propName,v)},
+                        //value:model[elem],
+                        //writable: true,//设置该属性是否可读
+                        enumerable: true,//使用for in语句时，属性是否会被抛出;
+                        configurable: true//设置该属性是否可以修改，属性是否可以删除
+                    }
+                })(elem,model[elem]);//闭包传递出去;
+            }
+        };
+        Object.defineProperties(model,propertiesMap)//定义多个
+        function getFn(name){
+            var result=this.__private[name]//取出私有属性的值;
+            console.log("get value:"+name+"="+ result);//打印get方法时输出的属性和属性值
+            return result;//返回私有属性的值;
+        };
+        function setFn(name,val){
+        	//进行set方法//
+        	//判断给model属性赋值的值和原值是否相等。
+        	//如果不等则执行函数;
+            if(this.__private[name]!=val){
+                console.log("set value:"+name+"="+val);
+             	//打印新的值；
+                this.__private[name]=val;//重新给属性赋值
+
+                if(changeCallback){//如果回调存在，那么执行
+                    changeCallback(name,val);
+                }
+            }
+        };
+    }
+    
+    </script>
+</body>
+</html>
